@@ -50,8 +50,17 @@ python run.py
 - **Web Interface:** Secure Admin Dashboard with graphical logging, environment switching, User Provisioning, tactical Data Purge (Nuclear Wipe via Sec-Ops mode),.
 - **Access Control (RBAC):** Strict roles defined at DB level (`database_manager.py`).
 
+
+##ADMINISTRATOR PASSWORD
+
+--USER: admin
+--PASSWORD: password123
+
+Then u can chnage the admin password 
+
 ## Contributing
 Follow standard branching rules and please maintain Python type hinting within core engine modules to preserve maintainability.
 
 ---
 **Status: Production Ready | Defense Protocol: ACTIVE**
+
