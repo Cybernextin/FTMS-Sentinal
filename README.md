@@ -27,6 +27,12 @@ cd REPOSITORY_NAME
 ### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
+or
+python -m venv venv
+source venv/bin/activate   # Linux / Mac
+venv\Scripts\activate      # Windows
+
+pip install -r requirements.txt
 ```
 
 ### 4. Add environment variables
@@ -63,4 +69,5 @@ Follow standard branching rules and please maintain Python type hinting within c
 
 ---
 **Status: Production Ready | Defense Protocol: ACTIVE**
+
 
