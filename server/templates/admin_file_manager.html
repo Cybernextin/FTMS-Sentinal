@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel | Storage Grid</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+
+    <style>
+        :root {
+            --bg-black: #050505;
+            --sidebar-bg: #080808;
+            --card-bg: #0d0d0d;
+            --border-color: #1e1e1e;
+            --accent-blue: #3b82f6;
+            --secure-green: #22c55e;
+            --public-red: #ef4444;
+            --text-dim: #cbd5e1;
+            /* Significantly brighter */
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            /* Main wrapper handles scroll */
+        }
+
+        #wrapper {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* --- Sidebar Redesign --- */
+        #sidebar-wrapper {
+            width: 260px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-heading {
+            padding: 2rem 1.5rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .list-group-item {
+            background: transparent;
+            color: var(--text-dim);
+            border: none;
+            padding: 1rem 1.5rem;
+            font-size: 0.85rem;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+        }
+
+        .list-group-item:hover,
+        .list-group-item.active {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* --- Main Content Area --- */
+        #main-content {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--bg-black);
+        }
+
+        .admin-header {
+            padding: 1.5rem 2.5rem;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        /* --- THE SHARED ECOSYSTEM TOGGLE --- */
+        .env-switch-container {
+            display: flex;
+            align-items: center;
+            background: #111;
+            padding: 4px;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            position: relative;
+            width: 180px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .env-slider {
+            position: absolute;
+            width: 85px;
+            height: 32px;
+            background: var(--secure-green);
+            border-radius: 50px;
+            transition: all 0.4s ease;
+        }
+
+        .env-switch-container.private .env-slider {
+            transform: translateX(0);
+            background: var(--secure-green);
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+        }
+
+        .env-switch-container.public .env-slider {
+            transform: translateX(87px);
+            background: var(--public-red);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .env-label {
+            flex: 1;
+            text-align: center;
+            font-size: 0.6rem;
+            font-weight: 900;
+            z-index: 1;
+            letter-spacing: 1px;
+            transition: color 0.3s;
+            color: var(--text-dim);
+            pointer-events: none;
+        }
+
+        .env-switch-container.private .label-private {
+            color: #000;
+        }
+
+        .env-switch-container.public .label-public {
+            color: #000;
+        }
+
+        /* --- Grid/Table UI --- */
+        .admin-explorer-container {
+            padding: 2.5rem;
+        }
+
+        .browser-action-bar {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 12px;
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .input-premium {
+            background: #050505;
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        .file-grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .file-card-premium {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .file-card-premium:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.15);
+        }
+
+        .file-card-premium.selected {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.2);
+        }
+
+        .file-card-premium.selected::after {
+            content: "\f058";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: var(--accent-blue);
+            font-size: 0.8rem;
+        }
+
+        .file-icon {
+            font-size: 2.5rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+            transition: 0.3s;
+        }
+
+        .file-card-premium:hover .file-icon {
+            color: var(--accent-blue);
+            transform: scale(1.1);
+        }
+
+        .file-info-label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #fff;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .file-info-meta {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading">
+                <i class="fas fa-shield-halved text-primary"></i> SENTINEL <span
+                    style="font-weight: 300; color: var(--text-dim); margin-left: 5px;">FILES</span>
+            </div>
+            <div class="list-group">
+                <a href="/admin/dashboard" class="list-group-item">
+                    <i class="fas fa-chart-line me-3"></i>Live Monitor
+                </a>
+                <a href="/admin/file-explorer" class="list-group-item active">
+                    <i class="fas fa-folder-tree me-3"></i>File Explorer
+                </a>
+                <a href="{{ url_for('logout') }}" class="list-group-item text-danger mt-auto mb-4">
+                    <i class="fas fa-power-off me-3"></i>Terminated Session
+                </a>
+            </div>
+        </div>
+
+        <div id="main-content">
+            <div class="admin-header">
+                <div class="d-flex align-items-center gap-3">
+                    <button id="backBtn" class="btn-premium btn-premium-secondary"
+                        style="border-radius: 8px; padding: 5px 12px;" title="Navigate Back">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div id="breadcrumb" class="small fw-bold text-uppercase" style="letter-spacing: 1px;">
+                        <span class="text-muted">Root</span> <i class="fas fa-angle-right mx-2 opacity-50"></i> <span
+                            class="text-primary">Admin_Sector</span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn-premium btn-premium-secondary" style="border-radius: 8px; padding: 5px 12px;"
+                        onclick="window.adminExplorer.loadPath(window.adminExplorer.currentPath)" title="Rescan Assets">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <div id="envToggleBtn"
+                        class="env-switch-container {{ 'public' if is_global_public else 'private' }}"
+                        onclick="handleAdminEnvToggle()">
+                        <div class="env-slider"></div>
+                        <div class="env-label label-private">PRIVATE</div>
+                        <div class="env-label label-public">PUBLIC</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-explorer-container">
+                <div class="browser-action-bar">
+                    <button class="btn-premium btn-premium-primary"
+                        onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-plus-circle me-2"></i>UPLOAD FILES
+                    </button>
+                    <button class="btn-premium btn-premium-secondary" id="newFolderBtn">
+                        <i class="fas fa-plus me-2"></i>NEW FOLDER
+                    </button>
+
+                    <!-- Selection Actions (Initially Hidden) -->
+                    <div id="selectionActions" class="d-flex gap-2 ms-4 ps-4 border-start border-secondary"
+                        style="display: none !important;">
+                        <button class="btn-premium btn-premium-secondary"
+                            onclick="window.adminExplorer.handleContextAction('view')" title="Open">
+                            <i class="fas fa-external-link-alt text-success"></i>
+                        </button>
+                        <button class="btn-premium btn-premium-secondary"
+                            onclick="window.adminExplorer.handleContextAction('rename')" title="Rename">
+                            <i class="fas fa-edit text-warning"></i>
+                        </button>
+                        <button class="btn-premium btn-premium-secondary"
+                            onclick="window.adminExplorer.handleContextAction('move')" title="Move">
+                            <i class="fas fa-arrows-left-right text-info"></i>
+                        </button>
+                        <button class="btn-premium btn-premium-danger"
+                            onclick="window.adminExplorer.handleContextAction('delete')" title="Delete">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    <input type="file" id="fileInput" style="display: none;" multiple
+                        onchange="window.adminExplorer.handleUpload(this)">
+
+                    <div class="ms-auto" style="position: relative; width: 300px;">
+                        <i class="fas fa-search"
+                            style="position: absolute; left: 12px; top: 12px; font-size: 0.8rem; color: var(--text-dim);"></i>
+                        <input type="text" id="explorerSearch" class="input-premium w-100 ps-5"
+                            placeholder="Search indices...">
+                    </div>
+                </div>
+
+                <div class="file-grid-layout" id="fileGrid">
+                    <!-- Assets will be injected by admin_explorer.js -->
+                </div>
+
+                <div id="emptyState" class="text-center py-5 d-none">
+                    <i class="fas fa-ghost fa-4x mb-4 opacity-10"></i>
+                    <p class="text-white small">NO ASSETS DETECTED IN THIS SECTOR</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTEXT MENU -->
+    <div id="contextMenu" class="dropdown-menu dropdown-menu-dark shadow"
+        style="display:none; position:absolute; z-index: 10000; min-width: 180px; border: 1px solid var(--border-color); background: #0d0d0d;">
+        <div class="ctx-item dropdown-item py-2 px-3 small" data-action="view">
+            <i class="fas fa-external-link-alt me-2 text-success"></i> VIEW ASSET
+        </div>
+        <div class="ctx-item dropdown-item py-2 px-3 small" data-action="download">
+            <i class="fas fa-download me-2 text-primary"></i> DOWNLOAD ASSET
+        </div>
+        <div class="ctx-item dropdown-item py-2 px-3 small" data-action="rename">
+            <i class="fas fa-edit me-2 text-warning"></i> RECATALOG
+        </div>
+        <div class="ctx-item dropdown-item py-2 px-3 small" data-action="move">
+            <i class="fas fa-arrows-alt me-2 text-info"></i> RELOCATE
+        </div>
+        <div class="ctx-item dropdown-item py-2 px-3 small" data-action="toggleVisibility">
+            <i class="fas fa-eye me-2 text-primary"></i> CASCADE VISIBILITY
+        </div>
+        <div class="dropdown-divider border-secondary opacity-25"></div>
+        <div class="ctx-item dropdown-item py-2 px-3 small text-danger" data-action="delete">
+            <i class="fas fa-trash-alt me-2"></i> INCINERATE
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border-danger text-white">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-exclamation-triangle text-danger mb-4" style="font-size: 3rem;"></i>
+                    <h5 class="mb-3">INITIATE RESOURCE INCINERATION?</h5>
+                    <p class="text-white small">You are about to permanently purge <span id="deleteItemName"
+                            class="text-white fw-bold"></span>. This action is irreversible.</p>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pb-4">
+                    <button class="btn-premium btn-premium-secondary" data-bs-dismiss="modal">ABORT</button>
+                    <button class="btn-premium btn-premium-danger" id="confirmDeleteBtn">INCINERATE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div class="modal fade" id="renameModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border-secondary text-white">
+                <div class="modal-header border-0">
+                    <h6 class="modal-title">RECATALOG RESOURCE</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="small text-white mb-3">Enter new designation for this asset:</div>
+                    <input type="text" id="newNameInput" class="input-premium w-100">
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn-premium btn-premium-secondary" data-bs-dismiss="modal">CANCEL</button>
+                    <button class="btn-premium btn-premium-primary" id="confirmRenameBtn">UPDATE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Move Modal -->
+    <div class="modal fade" id="moveModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border-info text-white">
+                <div class="modal-header border-0">
+                    <h6 class="modal-title">RELOCATE RESOURCE</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="small text-white mb-3">Select target destination sector:</div>
+                    <div id="moveDestTree" class="folder-tree-container"></div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn-premium btn-premium-secondary" data-bs-dismiss="modal">CANCEL</button>
+                    <button class="btn-premium btn-premium-primary" id="confirmMoveBtn">RELOCATE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Folder Modal -->
+    <div class="modal fade" id="createFolderModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border-primary text-white">
+                <div class="modal-header border-0">
+                    <h6 class="modal-title">ESTABLISH NEW SECTOR</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="small text-white mb-3">Assign designation for the new storage sector:</div>
+                    <input type="text" id="folderNameInput" class="input-premium w-100" placeholder="e.g. Sector_Gamma">
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn-premium btn-premium-secondary" data-bs-dismiss="modal">CANCEL</button>
+                    <button class="btn-premium btn-premium-primary" id="confirmCreateFolderBtn">ESTABLISH</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="sentinelToast" class="toast bg-dark text-white border-secondary" role="alert" aria-live="assertive"
+            aria-atomic="true">
+            <div class="toast-body d-flex align-items-center">
+                <i id="toastIcon" class="fas fa-info-circle me-3 text-primary"></i>
+                <div id="toastMsg" class="small">System operational</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/folder_tree.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin_explorer.js') }}"></script>
+</body>
+
+</html>

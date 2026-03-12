@@ -1,0 +1,10 @@
+watchdog>=2.1.0
+requests
+Flask
+Flask-Login
+Flask-Bcrypt
+fpdf
+python-dotenv
+Flask-WTF
+psutil
+pycryptodome

@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel | Analytics Report</title>
+    <style>
+        /* Base Reset & Variables */
+        :root {
+            --bg-dark: #0a0a0b;
+            --card-bg: #141416;
+            --border: #232326;
+            --text-main: #e1e1e6;
+            --text-dim: #a1a1aa;
+
+            --critical: #ef4444;
+            --high: #f97316;
+            --medium: #f59e0b;
+            --low: #3b82f6;
+            --info-clr: #94a3b8;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        /* Navigation */
+        nav {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .nav-brand span {
+            color: var(--low);
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .btn-back {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-back:hover {
+            color: white;
+        }
+
+        .btn-print {
+            padding: 0.45rem 1rem;
+            background: #27272a;
+            border: 1px solid var(--border);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: background 0.2s;
+        }
+
+        .btn-print:hover {
+            background: #3f3f46;
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.3rem;
+        }
+
+        .page-header .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* Summary Header */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 1.25rem 1rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .summary-label {
+            display: block;
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* Breakdown bar */
+        .breakdown-bar {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .breakdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+        }
+
+        .breakdown-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Report Cards */
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .report-list {
+            margin-bottom: 2.5rem;
+        }
+
+        .report-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--border);
+            padding: 1.25rem 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 0.85rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .report-card:hover {
+            transform: translateX(3px);
+            box-shadow: -4px 0 12px rgba(59, 130, 246, 0.08);
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+
+        .report-id {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #fff;
+        }
+
+        .badge {
+            padding: 0.2rem 0.55rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-critical {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--critical);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .badge-high {
+            background: rgba(249, 115, 22, 0.12);
+            color: var(--high);
+            border: 1px solid rgba(249, 115, 22, 0.4);
+        }
+
+        .badge-medium {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--medium);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .badge-low {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--low);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+
+        .badge-info {
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--info-clr);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+        }
+
+        .report-meta {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .report-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .report-meta strong {
+            color: #c4c4cc;
+        }
+
+        .report-description {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 0.75rem;
+            margin-top: 0.6rem;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .report-description .ai-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--low);
+            margin-bottom: 0.3rem;
+            display: block;
+        }
+
+        /* Color Borders based on Risk */
+        .card-critical {
+            border-left-color: var(--critical);
+        }
+
+        .card-high {
+            border-left-color: var(--high);
+        }
+
+        .card-medium {
+            border-left-color: var(--medium);
+        }
+
+        .card-low {
+            border-left-color: var(--low);
+        }
+
+        .card-info {
+            border-left-color: var(--info-clr);
+        }
+
+        /* Status Text Colors */
+        .status-critical {
+            color: var(--critical);
+        }
+
+        .status-high {
+            color: var(--high);
+        }
+
+        .status-medium {
+            color: var(--medium);
+        }
+
+        .status-low {
+            color: var(--low);
+        }
+
+        .status-info {
+            color: var(--info-clr);
+        }
+
+        /* Conclusion Panel */
+        .info-panel {
+            background: #18181b;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-panel.panel-critical {
+            border-left: 4px solid var(--critical);
+        }
+
+        .info-panel.panel-high {
+            border-left: 4px solid var(--high);
+        }
+
+        .info-panel.panel-medium {
+            border-left: 4px solid var(--medium);
+        }
+
+        .info-panel.panel-low {
+            border-left: 4px solid var(--low);
+        }
+
+        .info-panel.panel-info {
+            border-left: 4px solid var(--info-clr);
+        }
+
+        .info-text {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            line-height: 1.7;
+        }
+
+        .actions-list {
+            list-style: none;
+            margin-top: 0;
+        }
+
+        .actions-list li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.65rem;
+            font-size: 0.87rem;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        .actions-list li::before {
+            content: "›";
+            position: absolute;
+            left: 0;
+            color: var(--low);
+            font-size: 1.1rem;
+            line-height: 1.3;
+            font-weight: 700;
+        }
+
+        /* Risk Score Gauge */
+        .risk-gauge-wrap {
+            text-align: center;
+        }
+
+        .risk-gauge-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-top: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.68rem;
+            letter-spacing: 0.06em;
+        }
+
+        @media print {
+
+            nav,
+            .btn-print {
+                display: none;
+            }
+
+            body {
+                padding: 0;
+                background: white;
+                color: black;
+            }
+
+            .summary-card,
+            .report-card,
+            .info-panel,
+            .breakdown-bar {
+                border: 1px solid #ddd;
+                background: white;
+            }
+
+            .summary-label,
+            .report-meta,
+            .section-title {
+                color: #666;
+            }
+
+            .summary-value,
+            .report-description,
+            .info-text {
+                color: black;
+            }
+
+            .card-critical {
+                border-left-color: #ef4444 !important;
+            }
+
+            .card-high {
+                border-left-color: #f97316 !important;
+            }
+
+            .card-medium {
+                border-left-color: #f59e0b !important;
+            }
+
+            .card-low {
+                border-left-color: #3b82f6 !important;
+            }
+
+            .card-info {
+                border-left-color: #94a3b8 !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <nav>
+            <div class="nav-brand">
+                <span>SENTINEL</span> / ANALYTICS ENGINE
+            </div>
+            <div class="nav-actions">
+                <a href="javascript:history.back()" class="btn-back">← Back to Dashboard</a>
+                <button onclick="window.print()" class="btn-print">Save as PDF</button>
+            </div>
+        </nav>
+
+        {#
+        ─────────────────────────────────────────────────────────────────────
+        FTMS-ONLY SCOPE: Only file-transfer-related actions are included.
+        Excluded: SERVER_SHUTDOWN, SYSTEM events, authentication-only events
+        that carry no file-transfer context.
+        ─────────────────────────────────────────────────────────────────────
+        Severity priority map (for finding highest risk):
+        CRITICAL=4 > HIGH=3 > MEDIUM=2 > LOW=1 > INFO=0
+        Risk weight per entry (for score calculation):
+        CRITICAL=40, HIGH=25, MEDIUM=15, LOW=5, INFO=1
+        #}
+
+        {% set ns = namespace(filtered=[], total_pts=0, max_idx=0,
+        cnt_critical=0, cnt_high=0, cnt_medium=0, cnt_low=0, cnt_info=0) %}
+
+        {# FTMS-only action whitelist — strictly file transfer operations #}
+        {% set transfer_actions = [
+        'FILE_UPLOAD', 'UPLOAD', 'DOWNLOAD', 'FILE_DOWNLOAD', 'VIEW',
+        'DELETE', 'ADMIN_DELETE', 'FILE_DELETED', 'DIRECTORY_DELETED',
+        'RENAME', 'ADMIN_RENAME', 'FILE_MODIFIED',
+        'MOVE', 'ADMIN_MOVE', 'FILE_MOVED',
+        'ACCESS_UPDATE', 'ENV_CHANGE',
+        'UNAUTHORIZED_EXECUTABLE', 'RANSOMWARE_INDICATOR', 'SENSITIVE_EXIT', 'STORAGE_EXIT',
+        'EXTENSION_MASKING', 'SENSITIVE_KEYWORD', 'USER_CREATED', 'USER_DELETED'
+        ] %}
+
+        {% set priorities = {'CRITICAL': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1, 'INFO': 0} %}
+        {% set weights = {'CRITICAL': 40, 'HIGH': 25, 'MEDIUM': 15, 'LOW': 5, 'INFO': 1} %}
+
+        {# Single-pass filter + stats #}
+        {% for l in logs %}
+        {% if l.action|upper in transfer_actions %}
+        {% set dummy = ns.filtered.append(l) %}
+        {% set r = l.risk_level|upper %}
+        {% set p = priorities.get(r, 0) %}
+        {% set w = weights.get(r, 1) %}
+        {% set ns.total_pts = ns.total_pts + w %}
+        {% if p > ns.max_idx %}{% set ns.max_idx = p %}{% endif %}
+        {% if r == 'CRITICAL' %}{% set ns.cnt_critical = ns.cnt_critical + 1 %}
+        {% elif r == 'HIGH' %}{% set ns.cnt_high = ns.cnt_high + 1 %}
+        {% elif r == 'MEDIUM' %}{% set ns.cnt_medium = ns.cnt_medium + 1 %}
+        {% elif r == 'LOW' %}{% set ns.cnt_low = ns.cnt_low + 1 %}
+        {% else %}{% set ns.cnt_info = ns.cnt_info + 1 %}
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+
+        {% set filtered_logs = ns.filtered %}
+
+        {% if filtered_logs %}
+        {% set total_count = filtered_logs|length %}
+        {% set risk_levels = ['INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] %}
+        {% set highest_risk = risk_levels[ns.max_idx] %}
+        {% set max_possible = total_count * 40 %}
+        {% set risk_score = ((ns.total_pts / max_possible) * 100)|round|int if max_possible > 0 else 0 %}
+        {% set security_pct = 100 - risk_score %}
+
+        {# Human-friendly action labels #}
+        {% set action_labels = {
+        'FILE_UPLOAD': 'File Upload',
+        'UPLOAD': 'File Upload',
+        'DOWNLOAD': 'File Download',
+        'FILE_DOWNLOAD': 'File Download',
+        'VIEW': 'File Access/View',
+        'DELETE': 'File Deletion',
+        'ADMIN_DELETE': 'File Deletion',
+        'FILE_DELETED': 'File Deletion',
+        'DIRECTORY_DELETED': 'Folder Deletion',
+        'RENAME': 'File Rename',
+        'ADMIN_RENAME': 'File Rename',
+        'FILE_MODIFIED': 'File Modification',
+        'MOVE': 'File Transfer',
+        'ADMIN_MOVE': 'File Transfer',
+        'FILE_MOVED': 'File Transfer',
+        'ACCESS_UPDATE': 'Permission Change',
+        'ENV_CHANGE': 'Security Env Change',
+        'UNAUTHORIZED_EXECUTABLE': 'Suspicious Tool Detected',
+        'RANSOMWARE_INDICATOR': 'Ransomware Activity',
+        'SENSITIVE_EXIT': 'Sensitive Data Export',
+        'STORAGE_EXIT': 'External Data Movement',
+        'EXTENSION_MASKING': 'Stealth Tech Detected',
+        'SENSITIVE_KEYWORD': 'Sensitive Content Flag',
+        'USER_CREATED': 'Operator Provisioned',
+        'USER_DELETED': 'Operator Terminated'
+        } %}
+
+        <div class="page-header">
+            <h1>File Transfer Monitoring Report</h1>
+            <div class="subtitle">
+                Sentinel FTMS Analytics &nbsp;·&nbsp; {{ total_count }} incident{{ 's' if total_count != 1 else '' }}
+                analyzed
+                &nbsp;·&nbsp; Highest threat: <span class="status-{{ highest_risk|lower }}">{{ highest_risk }}</span>
+            </div>
+        </div>
+
+        <!-- 1. Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <span class="summary-label">Total Incidents</span>
+                <span class="summary-value">{{ total_count }}</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Highest Severity</span>
+                <span class="summary-value status-{{ highest_risk|lower }}">{{ highest_risk }}</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Risk Score</span>
+                <span class="summary-value status-{{ highest_risk|lower }}">{{ risk_score }}%</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Security Rating</span>
+                <span
+                    class="summary-value {% if security_pct >= 80 %}status-low{% elif security_pct >= 50 %}status-medium{% else %}status-critical{% endif %}">
+                    {{ security_pct }}%
+                </span>
+            </div>
+        </div>
+
+        <!-- Severity Breakdown Bar -->
+        <div class="breakdown-bar">
+            <span
+                style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim);">Breakdown:</span>
+            {% if ns.cnt_critical > 0 %}
+            <div class="breakdown-item">
+                <div class="breakdown-dot" style="background: var(--critical);"></div>
+                <span style="color: var(--critical); font-weight: 700;">{{ ns.cnt_critical }}</span>
+                <span style="color: var(--text-dim);">Critical</span>
+            </div>
+            {% endif %}
+            {% if ns.cnt_high > 0 %}
+            <div class="breakdown-item">
+                <div class="breakdown-dot" style="background: var(--high);"></div>
+                <span style="color: var(--high); font-weight: 700;">{{ ns.cnt_high }}</span>
+                <span style="color: var(--text-dim);">High</span>
+            </div>
+            {% endif %}
+            {% if ns.cnt_medium > 0 %}
+            <div class="breakdown-item">
+                <div class="breakdown-dot" style="background: var(--medium);"></div>
+                <span style="color: var(--medium); font-weight: 700;">{{ ns.cnt_medium }}</span>
+                <span style="color: var(--text-dim);">Medium</span>
+            </div>
+            {% endif %}
+            {% if ns.cnt_low > 0 %}
+            <div class="breakdown-item">
+                <div class="breakdown-dot" style="background: var(--low);"></div>
+                <span style="color: var(--low); font-weight: 700;">{{ ns.cnt_low }}</span>
+                <span style="color: var(--text-dim);">Low</span>
+            </div>
+            {% endif %}
+            {% if ns.cnt_info > 0 %}
+            <div class="breakdown-item">
+                <div class="breakdown-dot" style="background: var(--info-clr);"></div>
+                <span style="color: var(--info-clr); font-weight: 700;">{{ ns.cnt_info }}</span>
+                <span style="color: var(--text-dim);">Info</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 2. Report Cards -->
+        <h2 class="section-title">Transfer Incident Log</h2>
+        <div class="report-list">
+            {% for l in filtered_logs %}
+            {% set action_label = action_labels.get(l.action|upper, l.action) %}
+            {% set risk = l.risk_level|upper %}
+            <div class="report-card card-{{ l.risk_level|lower }}">
+                <div class="report-header">
+                    <span class="report-id">Report #{{ ranks.get(l.id|string, l.id) }}</span>
+                    <span class="badge badge-{{ l.risk_level|lower }}">{{ l.risk_level }}</span>
+                </div>
+                <div class="report-meta">
+                    <span><strong>User:</strong> {{ l.username or 'System' }}</span>
+                    <span><strong>File Action:</strong> {{ action_label }}</span>
+                </div>
+                {% if risk == 'CRITICAL' %}
+                {% if 'DELETE' in l.action|upper %}
+                Critical file deletion detected. User <strong>{{ l.username }}</strong> performed a high-impact {{
+                action_label|lower }} that may indicate unauthorized data destruction or targeted removal of
+                sensitive records. Immediate audit required.
+                {% elif 'DOWNLOAD' in l.action|upper or l.action|upper == 'VIEW' %}
+                Critical data exfiltration risk. Bulk or sensitive file download by <strong>{{ l.username
+                    }}</strong> detected outside approved transfer windows. Potential unauthorized data movement to
+                external endpoints.
+                {% elif 'MOVE' in l.action|upper %}
+                Critical unauthorized transfer detected. File relocation by <strong>{{ l.username }}</strong>
+                bypasses standard transfer controls and poses severe risk of cross-sector data exposure.
+                {% else %}
+                Critical file transfer violation detected. Action by <strong>{{ l.username }}</strong> severely
+                deviates from approved FTMS protocols. Risk of data integrity compromise is high.
+                {% endif %}
+                {% elif risk == 'HIGH' %}
+                {% if 'DELETE' in l.action|upper %}
+                High-risk deletion event. <strong>{{ l.username }}</strong> deleted a file or directory that may
+                contain sensitive records. This activity is flagged for unauthorized bulk purge patterns.
+                {% elif 'UPLOAD' in l.action|upper %}
+                Suspicious upload detected. <strong>{{ l.username }}</strong> uploaded a file that may contain
+                policy-violating content or exceed authorized transfer parameters.
+                {% elif 'MOVE' in l.action|upper or 'TRANSFER' in action_label|upper %}
+                Elevated transfer risk. <strong>{{ l.username }}</strong> relocated files across sectors in a
+                pattern consistent with unauthorized cross-department data movement.
+                {% elif 'ACCESS' in l.action|upper or 'ENV' in l.action|upper %}
+                High-risk permission change. <strong>{{ l.username }}</strong> altered file visibility or
+                system-wide access controls in a manner that could expose restricted data.
+                {% else %}
+                High-severity file transfer event by <strong>{{ l.username }}</strong>. Activity deviates
+                significantly from established FTMS baselines and warrants immediate review.
+                {% endif %}
+                {% elif risk == 'MEDIUM' %}
+                {% if 'RENAME' in l.action|upper or 'MODIFIED' in l.action|upper %}
+                Unusual file modification pattern. <strong>{{ l.username }}</strong> renamed or modified a file in a
+                restricted sector. This behavior may indicate credential misuse or unauthorized content alteration.
+                {% elif 'FOLDER' in action_label|upper or 'CREATED' in l.action|upper %}
+                Moderate anomaly in directory structure. <strong>{{ l.username }}</strong> created a new folder
+                outside standard provisioning procedures. Monitor for subsequent unauthorized uploads.
+                {% else %}
+                Moderate deviation from normal {{ action_label|lower }} behavior. Activity by <strong>{{ l.username
+                    }}</strong> deviates from FTMS baselines and indicates potential policy gap or credential
+                misuse.
+                {% endif %}
+                {% elif risk == 'LOW' %}
+                {% if 'UPLOAD' in l.action|upper or 'FOLDER' in action_label|upper %}
+                Standard file provisioning event logged. <strong>{{ l.username }}</strong> uploaded or created a
+                resource following normal FTMS workflow. No immediate threat detected.
+                {% elif 'DOWNLOAD' in l.action|upper or l.action|upper == 'VIEW' %}
+                Routine file access event. <strong>{{ l.username }}</strong> downloaded or viewed a file within
+                authorized access parameters. Logged for audit trail completeness.
+                {% elif 'RENAME' in l.action|upper %}
+                Minor file recatalog event. <strong>{{ l.username }}</strong> renamed a resource — a low-impact
+                modification that poses no immediate security threat.
+                {% elif 'DELETE' in l.action|upper %}
+                Authorized deletion recorded. <strong>{{ l.username }}</strong> removed a file within their
+                permitted workspace. No unauthorized access detected.
+                {% else %}
+                Low-risk file transfer activity recorded for <strong>{{ l.username }}</strong>. Operation falls
+                within acceptable FTMS parameters and requires no immediate action.
+                {% endif %}
+                {% else %}
+                Normal file system activity cataloged. <strong>{{ l.username }}</strong> performed a {{
+                action_label|lower }} that follows standard FTMS security protocols. No anomalies detected.
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 3. Final Conclusion -->
+    <h2 class="section-title">Transfer Risk Conclusion</h2>
+    <div class="info-panel panel-{{ highest_risk|lower }}">
+        <div class="info-text">
+            {% if highest_risk == 'CRITICAL' %}
+            <strong style="color: var(--critical);">&#x26A0; CRITICAL THREAT DETECTED</strong><br><br>
+            The FTMS engine has identified a critical-severity file transfer violation in the monitored dataset.
+            Unauthorized bulk operations, sensitive data movement, or file destruction events have been detected
+            that bypass established transfer security controls. Immediate containment, session isolation, and
+            comprehensive audit of all flagged users and file paths is strongly recommended.
+            {% elif highest_risk == 'HIGH' %}
+            <strong style="color: var(--high);">&#x26A0; HIGH RISK IDENTIFIED</strong><br><br>
+            Elevated threat patterns have been detected across file transfer monitors. High-volume transfers,
+            suspicious deletions, or unauthorized permission changes suggest a significant risk of data
+            exfiltration or policy violation. Immediate review and temporary privilege restriction for
+            flagged operators is advised pending full investigation.
+            {% elif highest_risk == 'MEDIUM' %}
+            <strong style="color: var(--medium);">&#9888; MODERATE ANOMALIES DETECTED</strong><br><br>
+            Moderate deviations from established FTMS baselines have been observed. Unusual file modification
+            patterns, unexpected folder creation, or higher-than-normal download volumes were identified.
+            Closer monitoring of affected users and sectors is recommended, with follow-up audit if patterns
+            persist.
+            {% elif highest_risk == 'LOW' %}
+            <strong style="color: var(--low);">&#10003; LOW RISK — MONITOR RECOMMENDED</strong><br><br>
+            File transfer activity remains largely within documented baseline parameters. Minor deviations such
+            as unexpected renames or off-schedule transfers have been logged but pose no immediate security
+            threat. Continue standard monitoring protocols.
+            {% else %}
+            <strong style="color: var(--info-clr);">&#10003; SYSTEM NOMINAL</strong><br><br>
+            All file transfer activities are within normal operating parameters. No anomalies, policy violations,
+            or suspicious behaviors have been detected in the selected log range. The FTMS infrastructure is
+            operating in a stable, compliant state.
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 4. Recommended Actions -->
+    <h2 class="section-title">Recommended Actions</h2>
+    <div class="info-panel">
+        <ul class="actions-list">
+            {% if highest_risk == 'CRITICAL' %}
+            <li>Immediately suspend file transfer privileges for all flagged operators and isolate affected storage
+                sectors.</li>
+            <li>Conduct a full audit of all bulk download, deletion, and cross-sector transfer activities in the
+                flagged timeframe.</li>
+            <li>Rotate administrative security keys for all sensitive file storage directories and restricted
+                sectors.</li>
+            <li>Implement real-time session monitoring for all active file transfers originating from flagged user
+                accounts.</li>
+            <li>Escalate findings to the security incident response team for formal investigation.</li>
+            {% elif highest_risk == 'HIGH' %}
+            <li>Temporarily restrict upload and download privileges for operators involved in flagged HIGH-severity
+                events.</li>
+            <li>Review all file paths associated with flagged transfers to verify no sensitive data was exfiltrated.
+            </li>
+            <li>Audit recent permission changes (ACCESS_UPDATE, ENV_CHANGE) and revert any unauthorized
+                modifications.</li>
+            <li>Enable enhanced logging and real-time alerts for users with repeated high-risk transfer patterns.
+            </li>
+            {% elif highest_risk == 'MEDIUM' %}
+            <li>Increase monitoring frequency for operators associated with MEDIUM-severity file events.</li>
+            <li>Review directory structures modified in the flagged timeframe for unauthorized restructuring.</li>
+            <li>Verify that all renamed or modified files comply with FTMS naming and content policies.</li>
+            <li>Schedule a scheduled integrity scan on affected storage sectors to confirm metadata consistency.
+            </li>
+            {% else %}
+            <li>Maintain established FTMS monitoring protocols and review access logs for baseline drift.</li>
+            <li>Verify the identity and authorization of operators involved in file relocation procedures.</li>
+            <li>Perform routine integrity checks on storage sectors during the next scheduled maintenance window.
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    {% else %}
+    <!-- No data state -->
+    <div class="page-header" style="margin-bottom: 0;">
+        <h1>File Transfer Monitoring Report</h1>
+        <div class="subtitle">Sentinel FTMS Analytics Engine</div>
+    </div>
+    <div style="text-align: center; padding: 5rem 2rem;">
+        <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 1rem;">
+            <div
+                style="width: 64px; height: 64px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; opacity: 0.4;">
+                📂</div>
+            <div style="font-weight: 700; color: #fff; font-size: 1.1rem;">No FTMS Incidents Found</div>
+            <div style="color: var(--text-dim); font-size: 0.85rem; max-width: 360px; line-height: 1.6;">
+                The analytics engine detected no file transfer activities matching the selected criteria.
+                Only FTMS-relevant actions (uploads, downloads, deletions, moves, renames, modifications)
+                are included in this report.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <footer>
+        SENTINEL FTMS ANALYTICS ENGINE &nbsp;·&nbsp; FILE TRANSFER MONITORING REPORT &nbsp;·&nbsp; AUTHORIZED ACCESS
+        ONLY &nbsp;·&nbsp; v3.0
+    </footer>
+    </div>
+
+</body>
+
+</html>

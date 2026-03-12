@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel | Command Center Access</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-black: #000000;
+            --accent-white: #ffffff;
+            --card-bg: #0a0a0a;
+            --border-color: #222222;
+            --text-dim: #999999;
+            --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        body,
+        html {
+            width: 100%;
+            min-height: 100vh;
+            margin: 0;
+            background: radial-gradient(circle at center, #0d0d0d 0%, #000000 100%);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+            padding: 2rem;
+            animation: fadeIn 1.2s var(--ease-out-expo);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 3rem 2.5rem;
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        /* Branding Section */
+        .brand-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 0.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent-white);
+        }
+
+        .brand-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            letter-spacing: 0.1rem;
+            text-transform: uppercase;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Form Styling */
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-bottom: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+        }
+
+        .input-field {
+            width: 100%;
+            box-sizing: border-box;
+            background: #111;
+            border: 1px solid var(--border-color);
+            padding: 1rem 1rem 1rem 3rem;
+            border-radius: 10px;
+            color: white;
+            font-size: 0.95rem;
+            transition: all 0.3s var(--ease-out-expo);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #444;
+            background: #151515;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03);
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 1.1rem;
+            bottom: 1.1rem;
+            color: #444;
+            transition: color 0.3s;
+        }
+
+        .input-field:focus+i {
+            color: var(--accent-white);
+        }
+
+        /* Utilities */
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            font-size: 0.8rem;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            color: var(--text-dim);
+            cursor: pointer;
+        }
+
+        .remember-me input {
+            margin-right: 8px;
+            accent-color: #fff;
+        }
+
+        .forgot-link {
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .forgot-link:hover {
+            color: #fff;
+        }
+
+        /* Professional Action Button */
+        .btn-signin {
+            width: 100%;
+            padding: 1.1rem;
+            background: var(--accent-white);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-out-expo);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-signin:hover {
+            transform: translateY(-2px);
+            background: #e6e6e6;
+            box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Footer Links */
+        .footer-action {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .admin-link {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .admin-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Notifications */
+        .toast-vault {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #0d0d0d;
+            border: 1px solid #333;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            animation: slideIn 0.5s var(--ease-out-expo) forwards;
+        }
+
+        .toast-vault.show {
+            display: flex;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .toast-vault {
+                left: 1rem;
+                right: 1rem;
+                bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body data-flashes='{{ get_flashed_messages(with_categories=true) | tojson }}'>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="brand-logo">SENTINEL</div>
+            <div class="brand-subtitle">COMMAND CENTER ACCESS</div>
+
+            <form method="POST" action="{{ url_for('admin_login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" name="username" class="input-field" placeholder="Username" required>
+                    <i class="fas fa-user-shield"></i>
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" name="password" class="input-field" placeholder="••••••••" required>
+                    <i class="fas fa-lock"></i>
+                </div>
+
+                <button type="submit" class="btn-signin">
+                    Login <i class="fas fa-chevron-right" style="font-size: 0.7rem;"></i>
+                </button>
+            </form>
+
+            <div class="footer-action">
+                User Portal
+                <a href="{{ url_for('login_page') }}" class="admin-link">
+                    <i class="fas fa-shield-halved"></i> User Login Page
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminToast" class="toast-vault">
+        <div class="toast-icon" id="toastIcon"><i class="fas fa-shield-exclamation"></i></div>
+        <div>
+            <div id="toastTitle" class="toast-title"
+                style="color: var(--accent-white); font-weight: 800; font-size: 0.8rem; letter-spacing: 1px;">NOTICE
+            </div>
+            <div id="toastMsg" class="toast-msg" style="color: var(--text-dim); font-size: 0.75rem;">System alert
+                message here.</div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+
+</html>

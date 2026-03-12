@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel | Command Center</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <style>
+        :root {
+            --bg-black: #050505;
+            --sidebar-bg: #0a0a0a;
+            --card-bg: #0d0d0d;
+            --accent-blue: #3b82f6;
+            --border-color: #1e1e1e;
+            --text-dim: #cbd5e1;
+            /* Significantly brighter for visibility */
+            --critical: #ef4444;
+            /* Red */
+            --high: #f97316;
+            /* Orange */
+            --medium: #f59e0b;
+            /* Yellow */
+            --low: #3b82f6;
+            /* Blue */
+            --info: #94a3b8;
+            /* Gray */
+
+            /* SEC-OPS Tactical Tokens */
+            --bg-deep-tactical: #0a0a0b;
+            --panel-bg-tactical: #16161a;
+            --accent-red-tactical: #ff3e3e;
+            --accent-glow-tactical: rgba(255, 62, 62, 0.2);
+            --text-primary-tactical: #e2e8f0;
+            --text-dim-tactical: #94a3b8;
+            --border-subtle-tactical: #2d2d35;
+            --font-mono-tactical: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            /* Prevent body scroll */
+        }
+
+        /* --- Unified Sidebar --- */
+        #sidebar-wrapper {
+            height: 100vh;
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            transition: all 0.3s;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-heading {
+            padding: 2.5rem 1.5rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            font-size: 1.1rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .list-group-item {
+            background: transparent !important;
+            color: var(--text-dim) !important;
+            border: none !important;
+            padding: 12px 24px !important;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .list-group-item:hover,
+        .list-group-item.active {
+            color: var(--accent-blue) !important;
+            background: rgba(59, 130, 246, 0.05) !important;
+        }
+
+        .list-group-item i {
+            width: 25px;
+            font-size: 1rem;
+        }
+
+        /* --- Main Content Area --- */
+        #page-content-wrapper {
+            width: 100%;
+            height: 100vh;
+            overflow-y: auto;
+            background: var(--bg-black);
+            flex-grow: 1;
+        }
+
+        .nav-premium {
+            padding: 1.5rem 2.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        /* --- Modern Stat Cards --- */
+        .stat-card-premium {
+            background: rgba(13, 13, 13, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1.8rem 1.5rem;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .stat-card-premium:hover {
+            transform: translateY(-8px);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+            background: rgba(20, 20, 20, 0.9);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 800;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+        }
+
+        .indicator {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* --- Unified Tables --- */
+        .card-table-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            margin-top: 2rem;
+            overflow-x: auto;
+            /* Allow horizontal scrolling on smaller screens */
+            width: 100%;
+        }
+
+        .table-premium {
+            width: 100%;
+            margin-bottom: 0;
+            color: #eee;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+            /* Ensures fixed column widths */
+        }
+
+        .table-premium th {
+            background: #080808;
+            padding: 1.4rem 1rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.5);
+            border-bottom: 2px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .table-premium td {
+            padding: 1.2rem 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #141414;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .table-premium tr {
+            transition: background 0.2s;
+        }
+
+        .table-premium tr:hover {
+            background: rgba(255, 255, 255, 0.03) !important;
+            cursor: pointer;
+        }
+
+        /* Column Specific Styles */
+        .col-no {
+            width: 80px;
+            text-align: center;
+        }
+
+        .col-path {
+            width: auto;
+            text-align: left;
+            word-break: break-all;
+            padding-left: 1.5rem !important;
+        }
+
+        .col-action {
+            width: 220px;
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem !important;
+        }
+
+        .col-severity {
+            width: 140px;
+            text-align: center;
+        }
+
+        .col-time {
+            width: 200px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem !important;
+        }
+
+        .col-operator {
+            width: 160px;
+            text-align: left;
+            padding-right: 1.5rem !important;
+        }
+
+        .operator-tag {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .path-link {
+            color: var(--accent-blue);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            text-decoration: none;
+        }
+
+        .path-link:hover {
+            text-decoration: underline;
+        }
+
+        /* --- Search & Filters --- */
+        .filter-section {
+            display: flex;
+            gap: 1rem;
+            padding: 2rem 0;
+            border-bottom: 1px solid #151515;
+            margin-bottom: 2rem;
+        }
+
+        .input-premium-dark {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .input-premium-dark:focus {
+            border-color: var(--accent-blue);
+        }
+
+        /* --- Badges --- */
+        .badge-fim {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .b-critical {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--critical);
+            border: 1px solid var(--critical);
+        }
+
+        .b-high {
+            background: rgba(249, 115, 22, 0.1);
+            color: var(--high);
+            border: 1px solid var(--high);
+        }
+
+        .b-medium,
+        .b-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--medium);
+            border: 1px solid var(--medium);
+        }
+
+        .b-low {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--low);
+            border: 1px solid var(--low);
+        }
+
+        .b-info {
+            background: rgba(148, 163, 184, 0.1);
+            color: var(--info);
+            border: 1px solid var(--info);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-black);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #222;
+            border-radius: 10px;
+        }
+
+        /* Melting effect for row deletion */
+        @keyframes meltDown {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+                filter: blur(0);
+            }
+
+            50% {
+                transform: translateY(10px) scale(0.98);
+                opacity: 0.5;
+                filter: blur(2px);
+            }
+
+            100% {
+                transform: translateY(20px) scale(0.95);
+                opacity: 0;
+                filter: blur(5px);
+            }
+        }
+
+        .row-melt {
+            animation: meltDown 0.6s forwards ease-out;
+            pointer-events: none;
+            background: rgba(239, 68, 68, 0.05) !important;
+        }
+
+        /* User Accounts Matrix - Professional Redesign */
+        .matrix-container-professional {
+            --bg-matrix: #1a1d24;
+            --text-primary: #ffffff;
+            --text-muted: #9ca3af;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --border-color: #2d3139;
+
+            background-color: var(--bg-matrix);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            width: 100%;
+        }
+
+        .matrix-header-pro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+
+        .title-group-pro {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .title-group-pro h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .user-row-pro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .user-row-pro:last-of-type {
+            border-bottom: none;
+        }
+
+        .user-identity-pro {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 150px;
+        }
+
+        .user-name-pro {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .badge-pro {
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            width: fit-content;
+            text-transform: uppercase;
+        }
+
+        .badge-admin-pro {
+            background: #1e293b;
+            color: #60a5fa;
+        }
+
+        .badge-user-pro {
+            background: #2d3139;
+            color: #9ca3af;
+        }
+
+        .current-status-pro {
+            color: var(--accent-blue);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .status-dot-pro {
+            height: 8px;
+            width: 8px;
+            background-color: var(--accent-blue);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-blue);
+        }
+
+        .button-group-pro {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn-pro {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-provision-pro {
+            background-color: var(--accent-green);
+            color: white !important;
+            border: none;
+            font-weight: 600;
+        }
+
+        .btn-view-pro {
+            background-color: var(--accent-blue);
+            color: white !important;
+            border: none;
+        }
+
+        .btn-terminate-pro {
+            color: var(--accent-red) !important;
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-terminate-pro:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--accent-red);
+        }
+
+        .btn-secondary-pro {
+            color: var(--text-muted) !important;
+        }
+
+        .btn-pro:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* Tactical Purge UI Enhancement */
+        .purge-strip-tactical {
+            background: #111114;
+            border: 1px solid #ff3e3e;
+            padding: 20px 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(255, 62, 62, 0.05);
+            margin-top: 2rem;
+        }
+
+        .info-section-tactical {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .label-tactical {
+            color: #ff3e3e;
+            font-weight: bold;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .description-tactical {
+            color: #71717a;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .btn-purge-tactical {
+            background: transparent;
+            color: #ff3e3e;
+            border: 1px solid #ff3e3e;
+            padding: 10px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-purge-tactical:hover {
+            background: #ff3e3e;
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 62, 62, 0.3);
+        }
+
+        .icon-hazard {
+            margin-right: 12px;
+            font-size: 1rem;
+            vertical-align: middle;
+        }
+
+        /* Tactical Purge Overlay Interface Styles */
+        .command-panel-modal {
+            background: var(--panel-bg-tactical) !important;
+            border: 1px solid var(--border-subtle-tactical) !important;
+            border-radius: 4px !important;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        .panel-header-tactical {
+            padding: 12px 20px;
+            background: #1c1c21;
+            border-bottom: 1px solid var(--border-subtle-tactical);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .system-status-tactical {
+            font-family: var(--font-mono-tactical);
+            font-size: 0.75rem;
+            color: var(--accent-red-tactical);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .alert-banner-tactical {
+            border: 1px solid var(--accent-red-tactical);
+            background: rgba(255, 62, 62, 0.05);
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+
+        .alert-title-tactical {
+            color: var(--accent-red-tactical);
+            font-family: var(--font-mono-tactical);
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        .alert-desc-tactical {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-dim-tactical);
+        }
+
+        .input-tactical-key {
+            width: 100%;
+            background: var(--bg-deep-tactical) !important;
+            border: 1px solid var(--border-subtle-tactical) !important;
+            padding: 12px !important;
+            color: white !important;
+            font-family: var(--font-mono-tactical) !important;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .input-tactical-key:focus {
+            border-color: var(--accent-red-tactical) !important;
+            box-shadow: 0 0 10px var(--accent-glow-tactical) !important;
+        }
+
+        .confirmation-box-tactical {
+            display: flex;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: var(--text-dim-tactical);
+            align-items: flex-start;
+            cursor: pointer;
+            padding: 10px 0;
+        }
+
+        .btn-tactical {
+            font-family: var(--font-mono-tactical);
+            padding: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            border: 1px solid var(--border-subtle-tactical);
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-cancel-tactical {
+            background: transparent;
+            color: var(--text-dim-tactical);
+            text-decoration: none;
+        }
+
+        .btn-cancel-tactical:hover {
+            background: #25252b;
+            color: white;
+        }
+
+        .btn-purge-tactical-nuclear {
+            background: transparent;
+            color: var(--accent-red-tactical);
+            border: 1px solid var(--accent-red-tactical);
+        }
+
+        .btn-purge-tactical-nuclear:hover {
+            background: var(--accent-red-tactical);
+            color: white;
+            box-shadow: 0 0 15px var(--accent-glow-tactical);
+        }
+
+        /* Sidebar Toggle behavior */
+        #wrapper.toggled #sidebar-wrapper {
+            margin-left: -280px;
+        }
+
+        #wrapper {
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="d-flex" id="wrapper">
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading">
+                <i class="fas fa-shield-halved" style="color: var(--accent-blue);"></i><span
+                    style="font-weight: 800; letter-spacing: -0.5px; font-size: 1.1rem; margin-left: 10px;">SENTINEL
+                    <span style="font-weight: 300; color: var(--text-dim);">COMMAND</span></span>
+            </div>
+            <div class="list-group list-group-flush mt-2">
+                <a href="#" class="list-group-item active" onclick="switchSection('live')"><i
+                        class="fas fa-chart-line me-3"></i>Live
+                    Monitor</a>
+                <a href="#" class="list-group-item" data-bs-toggle="modal" data-bs-target="#auditModal"><i
+                        class="fas fa-file-contract me-3 text-info"></i>Audit Reports</a>
+                <a href="/admin/file-explorer" class="list-group-item"><i
+                        class="fas fa-folder-open me-3 text-primary"></i>System Files</a>
+                <a href="#" class="list-group-item" data-bs-toggle="modal" data-bs-target="#manageUsersModal"><i
+                        class="fas fa-users me-3 text-info"></i>User Accounts</a>
+                <a href="#" class="list-group-item text-warning" data-bs-toggle="modal" data-bs-target="#purgeModal"><i
+                        class="fas fa-eraser me-3"></i>Purge Data</a>
+                <a href="{{ url_for('logout') }}" class="list-group-item text-danger" style="margin-top: 4rem;"><i
+                        class="fas fa-power-off me-3"></i>Deauthenticate</a>
+            </div>
+        </div>
+
+        <div id="page-content-wrapper">
+            <nav class="nav-premium">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-outline-secondary btn-sm border-0" id="menu-toggle"
+                        style="color: var(--text-dim);">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div style="font-weight: 700; letter-spacing: 1px; font-size: 0.85rem; color: #fff;">COMMAND CENTER
+                        AREA</div>
+                    <div>
+                        <span class="badge-fim b-low"
+                            style="background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2); font-size: 0.6rem; letter-spacing: 0.5px;">
+                            <i class="fas fa-circle me-1"
+                                style="font-size: 5px; vertical-align: middle; color: #10b981;"></i> SYSTEM SECURE
+                        </span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Manual Refresh Button -->
+                    <button class="btn btn-outline-secondary btn-sm border-0" onclick="window.refreshDashboard()"
+                        title="Force UI Synchronize">
+                        <i class="fas fa-sync-alt" style="font-size: 0.85rem;"></i>
+                    </button>
+                    <!-- Real-time System Clock -->
+                    <div class="d-flex align-items-center gap-2"
+                        style="font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 0.8rem; color: var(--accent-blue); background: rgba(59, 130, 246, 0.05); padding: 5px 12px; border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                        <i class="far fa-clock me-1" style="font-size: 0.75rem;"></i>
+                        <span id="systemClock">00:00:00</span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid px-5">
+                <!-- LIVE MONITOR SECTION -->
+                <div id="liveMonitorSection" class="pt-4">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-6 g-4">
+                        <div class="col">
+                            <div class="stat-card-premium">
+                                <div class="stat-label">Critical</div>
+                                <div id="statCritical" class="stat-value text-danger">{{ stats.critical_events }}</div>
+                                <div class="indicator" style="background: var(--critical);"></div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="stat-card-premium">
+                                <div class="stat-label">High Risk</div>
+                                <div id="statHigh" class="stat-value text-warning">{{ stats.high_risk }}</div>
+                                <div class="indicator" style="background: var(--high);"></div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="stat-card-premium">
+                                <div class="stat-label">Medium</div>
+                                <div id="statMedium" class="stat-value" style="color: var(--medium);">{{
+                                    stats.medium_risk }}</div>
+                                <div class="indicator" style="background: var(--medium);"></div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="stat-card-premium">
+                                <div class="stat-label">Low Threat</div>
+                                <div id="statLow" class="stat-value" style="color: var(--low);">{{ stats.low_risk }}
+                                </div>
+                                <div class="indicator" style="background: var(--low);"></div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="stat-card-premium">
+                                <div class="stat-label">Info Log</div>
+                                <div id="statInfo" class="stat-value text-info">{{ stats.info_risk }}</div>
+                                <div class="indicator" style="background: var(--info);"></div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="stat-card-premium">
+                                <div class="stat-label">Total Events</div>
+                                <div id="statTotal" class="stat-value text-success">{{ stats.total_events }}</div>
+                                <div class="indicator" style="background: var(--accent-blue);"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-section d-flex align-items-center">
+                        <div id="defaultFilters" class="d-flex w-100 align-items-center">
+                            <div style="flex: 2; position: relative;">
+                                <i class="fas fa-search"
+                                    style="position: absolute; left: 1rem; top: 1rem; color: #444;"></i>
+                                <input type="text" id="fileSearch" class="input-premium-dark w-100 ps-5"
+                                    placeholder="Search system resources...">
+                            </div>
+                            <select id="userFilter" class="input-premium-dark ms-3" style="flex: 1;">
+                                <option value="ALL">All Users</option>
+                                {% for user in usernames %}
+                                <option value="{{ user }}">{{ user }}</option>
+                                {% endfor %}
+                            </select>
+                            <select id="severityFilter" class="input-premium-dark ms-3" style="flex: 1;">
+                                <option value="ALL">All Threat Levels</option>
+                                <option value="CRITICAL">Critical</option>
+                                <option value="HIGH">High Risk</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="LOW">Low</option>
+                                <option value="INFO">Info</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SELECTION MODE TOP BAR -->
+                    <div id="auditSelectionBar" class="d-none mb-4"
+                        style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--low); border-radius: 12px; padding: 1rem 1.5rem;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="fw-bold text-info"><i class="fas fa-check-square me-2"></i>Selection Mode
+                                Active</span>
+                            <div class="d-flex align-items-center gap-3">
+                                <button class="btn btn-sm btn-outline-secondary fw-bold px-3 py-2"
+                                    onclick="exitAuditSelectionMode()">Cancel</button>
+                                <button id="topGenerateReportBtn" class="btn btn-sm btn-info fw-bold px-3 py-2"
+                                    onclick="generateSelectedAuditReport()">
+                                    Generate Report (<span id="topSelectedCount">0</span> selected)
+                                </button>
+                            </div>
+                        </div>
+                        <div id="topSelectionError" class="alert alert-danger d-none mt-2 small"></div>
+                    </div>
+
+                    <div class="card-table-container mb-5">
+                        <table class="table-premium" id="mainLogsTable">
+                            <thead>
+                                <tr>
+                                    <th class="col-no">
+                                        <span class="normal-view">No</span>
+                                        <span class="select-view d-none"><i class="fas fa-check-square"></i></span>
+                                    </th>
+                                    <th class="col-path">Context / Resource Path</th>
+                                    <th class="col-action">Action</th>
+                                    <th class="col-severity">Severity</th>
+                                    <th class="col-time">Timestamp</th>
+                                    <th class="col-operator">Operator (User)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fimTableBody">
+                                {% for log in logs %}
+                                <tr data-severity="{{ log.risk_level }}" data-user="{{ log.username }}"
+                                    data-id="{{ log.id }}" onclick="handleRowClick(event, '{{ log.id }}')">
+                                    <td class="col-no">
+                                        <span class="normal-view small text-white">{{ loop.index }}</span>
+                                        <div class="select-view d-none">
+                                            <input type="checkbox" class="form-check-input log-cb" value="{{ log.id }}"
+                                                onclick="event.stopPropagation()">
+                                        </div>
+                                    </td>
+                                    <td class="col-path">
+                                        <span class="path-link">
+                                            {{ (log.file_path.replace('User: ', '') if log.file_path else
+                                            'SYSTEM_KERNEL') }}
+                                        </span>
+                                    </td>
+                                    <td class="col-action">
+                                        <span class="text-white fw-bold">
+                                            {% if 'DOWNLOAD' in log.action or 'VIEW' in log.action %}
+                                            {{ log.action }} <span class="text-info small">(by {{ log.username
+                                                }})</span>
+                                            {% else %}
+                                            {{ log.action }}
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="col-severity text-center">
+                                        <span class="badge-fim b-{{ log.risk_level.lower() }}"
+                                            style="min-width: 80px; display: inline-block;">
+                                            {{ log.risk_level }}
+                                        </span>
+                                    </td>
+                                    <td class="col-time">
+                                        <span class="small text-white">{{ log.timestamp }}</span>
+                                    </td>
+                                    <td class="col-operator">
+                                        <span class="operator-tag">{{ log.username }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== AUDIT REPORT MODAL ========== -->
+    <div class="modal fade" id="auditModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-info" style="background:#0d0d0d; color:#fff;">
+                <div class="modal-header" style="border-color:#1e1e1e;">
+                    <h5 class="modal-title fw-bold text-info"><i class="fas fa-file-contract me-2"></i>Generate Audit
+                        Report</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        id="auditCloseBtnTop"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="auditModalError" class="alert alert-danger d-none small" role="alert"></div>
+
+                    <div class="mb-4">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="auditType" id="auditTypeSelected"
+                                value="selected" checked>
+                            <label class="form-check-label text-white" for="auditTypeSelected">Selected Logs
+                                (IDs)</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="auditType" id="auditTypeRange"
+                                value="range">
+                            <label class="form-check-label text-white" for="auditTypeRange">Range (1 to N)</label>
+                        </div>
+                    </div>
+
+                    <div id="auditSelectedView">
+                        <p class="small text-white mb-3">You will be taken to the log table to manually select specific
+                            entries.</p>
+                        <button type="button" class="btn btn-outline-info w-100 fw-bold py-3"
+                            onclick="enterAuditSelectionMode()">
+                            <i class="fas fa-list-check me-2"></i>ENTER SELECTION MODE
+                        </button>
+                    </div>
+
+                    <div id="auditRangeView" class="d-none row">
+                        <div class="col-6">
+                            <label class="form-label small text-white text-uppercase fw-bold">From ID</label>
+                            <input type="number" id="auditFrom"
+                                class="form-control bg-black text-white border-secondary p-3" min="1">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-white text-uppercase fw-bold">To ID</label>
+                            <input type="number" id="auditTo"
+                                class="form-control bg-black text-white border-secondary p-3" min="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-color:#1e1e1e;">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal"
+                        id="auditCloseBtn">CLOSE</button>
+                    <button type="button" class="btn btn-info fw-bold px-4 py-2 d-none" id="auditGenerateBtn"
+                        onclick="handleAuditSubmit()">GENERATE REPORT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== ADD USER MODAL ========== -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0" style="background:#0d0d0d; color:#fff;">
+                <div class="modal-header" style="border-color:#1e1e1e;">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-user-plus me-2 text-success"></i>Provision User
+                        Account</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="addUserError" class="alert alert-danger d-none small" role="alert"></div>
+                    <form id="addUserForm" novalidate>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-uppercase"
+                                style="letter-spacing:.1rem; color: #fff;">Username</label>
+                            <input type="text" id="newUsername" name="username"
+                                class="form-control bg-dark text-white border-secondary" placeholder="operator_id"
+                                required autocomplete="off"
+                                style="color: #fff !important; background: #080808 !important;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-uppercase"
+                                style="letter-spacing:.1rem; color: #fff;">Access Key</label>
+                            <input type="password" id="newPassword" name="password"
+                                class="form-control bg-dark text-white border-secondary" placeholder="Min 6 characters"
+                                required style="color: #fff !important; background: #080808 !important;">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-uppercase"
+                                style="letter-spacing:.1rem; color: #fff;">Confirm Key</label>
+                            <input type="password" id="confirmPassword" name="confirm_password"
+                                class="form-control bg-dark text-white border-secondary" placeholder="Repeat key"
+                                required style="color: #fff !important; background: #080808 !important;">
+                        </div>
+                        <button type="submit" id="addUserSubmit" class="btn btn-success w-100 fw-bold">
+                            <i class="fas fa-user-check me-2"></i>PROVISION ACCOUNT
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MANAGE USERS MODAL ========== -->
+    <div class="modal fade" id="manageUsersModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0" style="background:#1a1d24; color:#fff; border-radius: 8px;">
+                <div class="matrix-container-professional" id="userListBody">
+                    <header class="matrix-header-pro">
+                        <div class="title-group-pro">
+                            <svg width="24" height="24" fill="var(--accent-blue)" viewBox="0 0 24 24">
+                                <path
+                                    d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                            </svg>
+                            <h2>User Accounts Matrix</h2>
+                        </div>
+                        <button class="btn-pro btn-provision-pro" data-bs-toggle="modal"
+                            data-bs-target="#addUserModal">+ Provision Account</button>
+                    </header>
+
+                    {% for username in usernames %}
+                    <div class="user-row-pro" data-username="{{ username }}">
+                        <div class="user-identity-pro">
+                            <span class="user-name-pro">{{ username }}</span>
+                            {% if username == current_user.username %}
+                            <span class="badge-pro badge-admin-pro">ADMIN</span>
+                            {% else %}
+                            <span class="badge-pro badge-user-pro">USER</span>
+                            {% endif %}
+                        </div>
+
+                        {% if username == current_user.username %}
+                        <div class="current-status-pro">
+                            <span class="status-dot-pro"></span> Current User
+                        </div>
+                        {% endif %}
+
+                        <div class="button-group-pro">
+                            {% if username != current_user.username %}
+                            <button class="btn-pro btn-terminate-pro" onclick="handleDeleteUser('{{ username }}')">
+                                Terminate
+                            </button>
+                            {% endif %}
+                            <button class="btn-pro btn-secondary-pro"
+                                onclick="openChangePasswordModal('{{ username }}')">
+                                Change Password
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer border-0 p-3" style="background: rgba(255,255,255,0.02);">
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== CHANGE PASSWORD MODAL ========== -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0" style="background:#0d0d0d; color:#fff;">
+                <div class="modal-header" style="border-color:#1e1e1e;">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-key me-2 text-info"></i>Change Password for
+                        <span id="cpUsernameDisplay"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="changePasswordError" class="alert alert-danger d-none small" role="alert"></div>
+                    <form id="changePasswordForm" novalidate onsubmit="submitChangePassword(event)">
+                        <input type="hidden" id="cpUsername" name="username">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-uppercase"
+                                style="letter-spacing:.1rem; color: #fff;">New Password</label>
+                            <input type="password" id="cpPassword" name="password"
+                                class="form-control bg-dark text-white border-secondary" placeholder="Min 6 characters"
+                                required style="color: #fff !important; background: #080808 !important;">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-uppercase"
+                                style="letter-spacing:.1rem; color: #fff;">Confirm Password</label>
+                            <input type="password" id="cpConfirmPassword" name="confirm_password"
+                                class="form-control bg-dark text-white border-secondary"
+                                placeholder="Repeat new password" required
+                                style="color: #fff !important; background: #080808 !important;">
+                        </div>
+                        <button type="submit" id="cpSubmitBtn" class="btn btn-info w-100 fw-bold">
+                            <i class="fas fa-save me-2"></i>SAVE PASSWORD
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========== LOG PURGE MODAL ========== -->
+    <div class="modal fade" id="purgeModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0"
+                style="background:#0d0d0d; color:#fff; border-top: 4px solid var(--medium) !important;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-warning"><i class="fas fa-eraser me-2"></i>Log Purge
+                        Engine</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small mb-4 text-white">Select granular criteria to permanently remove security telemetry
+                        from the system. <span class="text-danger fw-bold">This action is irreversible.</span></p>
+
+                    <div class="row g-4">
+                        <!-- Category: By Severity -->
+                        <div class="col-md-6 col-lg-4">
+                            <label class="form-label small fw-bold text-uppercase opacity-50 mb-3"
+                                style="letter-spacing: 1px;">🔹 By Severity</label>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('severity', 'INFO', 'Delete all INFO severity logs?')">Delete
+                                    INFO Logs</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('severity', 'LOW', 'Delete all LOW severity logs?')">Delete
+                                    LOW Logs</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('severity', 'MEDIUM', 'Delete all MEDIUM severity logs?')">Delete
+                                    MEDIUM Logs</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('severity', 'HIGH', 'Delete all HIGH severity logs?')">Delete
+                                    HIGH Logs</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('severity', 'CRITICAL', 'Delete all CRITICAL severity logs?')">Delete
+                                    CRITICAL Logs</button>
+                            </div>
+                        </div>
+
+                        <!-- Category: By Log Type -->
+                        <div class="col-md-6 col-lg-4">
+                            <label class="form-label small fw-bold text-uppercase opacity-50 mb-3"
+                                style="letter-spacing: 1px;">🔹 By Log Type</label>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('type', 'AUTH', 'Delete all Authentication logs?')">Delete
+                                    Authentication Logs</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('type', 'FILE_UPLOAD', 'Delete all File Upload logs?')">Delete
+                                    File Upload Logs</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('type', 'DOWNLOAD', 'Delete all File Download logs?')">Delete
+                                    File Download Logs</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('type', 'DELETE', 'Delete all File Delete logs?')">Delete
+                                    File Delete Logs</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('type', 'FILE_MODIFIED', 'Delete all File Modification logs?')">Delete
+                                    File Modification Logs</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('type', 'DIR_EVENT', 'Delete all Directory events?')">Delete
+                                    Directory Events</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('type', 'ENV_CHANGE', 'Delete all Environment Change logs?')">Delete
+                                    Env Change Logs</button>
+                            </div>
+                        </div>
+
+                        <!-- Category: By Time -->
+                        <div class="col-md-6 col-lg-4">
+                            <label class="form-label small fw-bold text-uppercase opacity-50 mb-3"
+                                style="letter-spacing: 1px;">🔹 By Time Range</label>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('time', '24h', 'Delete logs older than 24 hours?')">Older
+                                    than 24 Hours</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('time', '7d', 'Delete logs older than 7 days?')">Older
+                                    than 7 Days</button>
+                                <button class="btn btn-outline-secondary btn-sm text-white"
+                                    onclick="openPurgeConfirm('time', '30d', 'Delete logs older than 30 days?')">Older
+                                    than 30 Days</button>
+                            </div>
+                            <div class="mt-3 p-2 border border-secondary rounded"
+                                style="background: rgba(255,255,255,0.02);">
+                                <label class="small text-white opacity-50 mb-2">Custom Range Selector</label>
+                                <input type="date" id="purgeDateStart"
+                                    class="form-control form-control-sm bg-black text-white border-secondary mb-2"
+                                    title="Start Date">
+                                <input type="date" id="purgeDateEnd"
+                                    class="form-control form-control-sm bg-black text-white border-secondary mb-2"
+                                    title="End Date">
+                                <button class="btn btn-info btn-sm w-100" onclick="handleCustomRangePurge()">Purge
+                                    Custom Range</button>
+                            </div>
+                        </div>
+
+                        <!-- Category: Advanced -->
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-uppercase opacity-50 mb-3"
+                                style="letter-spacing: 1px;">🔹 Advanced Options</label>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <button class="btn btn-outline-info btn-sm w-100"
+                                        onclick="openPurgeConfirm('advanced', 'non_critical', 'Delete all non-critical logs (LOW/MEDIUM/INFO)?')">Delete
+                                        Non-Critical Logs</button>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-outline-info btn-sm w-100"
+                                        onclick="openPurgeConfirm('advanced', 'resolved', 'Delete all logs marked as resolved?')">Delete
+                                        Resolved Events</button>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-outline-info btn-sm w-100"
+                                        onclick="openPurgeConfirm('advanced', 'user_activity', 'Delete all basic user activity logs?')">Delete
+                                        User Activity Logs</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEC-OPS Tactical Purge Strip -->
+                    <div class="purge-strip-tactical">
+                        <div class="info-section-tactical">
+                            <div class="label-tactical">
+                                DELETE ENTIRE DATA LOGS
+                            </div>
+                            <div class="description-tactical">
+                                Wipe entire security audit database via administrative override.
+                            </div>
+                        </div>
+
+                        <button onclick="openPurgeAllNuclear()" class="btn-purge-tactical"
+                            style="cursor: pointer;">Initiate Wipe</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== PURGE CONFIRMATION MODAL (Generic) ========== -->
+    <div class="modal fade" id="purgeConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 border-warning" style="background:#0d0d0d; color:#fff;">
+                <div class="modal-header border-warning pb-0">
+                    <h5 class="modal-title fw-bold text-warning"><i class="fas fa-exclamation-triangle me-2"></i>Action
+                        Confirmation</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <p id="purgeConfirmText" class="h5 mb-4"></p>
+                    <div class="alert alert-warning small">
+                        <i class="fas fa-info-circle me-2"></i>This action is irreversible. All selected data will be
+                        permanently incinerated from the database.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">ABORT</button>
+                    <button type="button" id="purgeFinalBtn" class="btn btn-warning fw-bold px-4">CONFIRM PURGE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== PURGE ALL (NUCLEAR) CONFIRMATION MODAL ========== -->
+    <div class="modal fade" id="purgeAllNuclearModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content command-panel-modal">
+                <div class="panel-header-tactical">
+                    <span class="system-status-tactical">Log Management // Security-Alpha</span>
+                    <div
+                        style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-red-tactical); box-shadow: 0 0 5px var(--accent-red-tactical);">
+                    </div>
+                </div>
+
+                <div class="p-4">
+                    <div class="alert-banner-tactical">
+                        <span class="alert-title-tactical">CRITICAL DATA OVERRIDE INITIATED</span>
+                        <p class="alert-desc-tactical">
+                            You are authorized to purge the **SIEM Security Audit Logs**. This operation will result in
+                            a permanent wipe of all event indices across the production cluster.
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-uppercase small opacity-50 mb-2 d-block"
+                            style="font-family: var(--font-mono-tactical); letter-spacing: 1px;">Admin Authentication
+                            Required</label>
+                        <input type="password" id="purgeAllPassword" class="input-tactical-key"
+                            placeholder="ENTER ACCESS KEY">
+                    </div>
+
+                    <label class="confirmation-box-tactical">
+                        <input type="checkbox" id="purgeAllConfirm">
+                        <span>I confirm this action complies with Sec-Ops retention protocols and acknowledge that this
+                            process is non-recoverable.</span>
+                    </label>
+
+                    <div id="purgeAllError" class="alert alert-danger d-none small mt-3"></div>
+
+                    <div class="row g-3 mt-4">
+                        <div class="col-6">
+                            <button class="btn-tactical btn-cancel-tactical w-100"
+                                data-bs-dismiss="modal">Abort</button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn-tactical btn-purge-tactical-nuclear w-100" id="purgeNuclearExecuteBtn"
+                                onclick="executeNuclearPurge()">Execute Purge</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== TERMINATE USER CONFIRMATION MODAL ========== -->
+    <div class="modal fade" id="terminateUserModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0"
+                style="background:#0d0d0d; color:#fff; border-top: 4px solid var(--critical) !important;">
+                <div class="modal-header" style="border-color:#1e1e1e;">
+                    <h5 class="modal-title fw-bold text-danger"><i class="fas fa-user-slash me-2"></i>Irreversible
+                        Termination</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-triangle text-danger mb-3"
+                            style="font-size: 3rem; opacity: 0.5;"></i>
+                        <p class="h5 fw-bold">Terminate <span id="terminateUsernameDisplay" class="text-info"></span>?
+                        </p>
+                        <p class="small text-white mt-2">This will permanently incinerate all files, directories,
+                            audit
+                            logs, and access credentials associated with this operator. This action cannot be
+                            undone.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">ABORT</button>
+                    <button type="button" id="confirmTerminateBtn" class="btn btn-danger fw-bold px-4"
+                        onclick="confirmTerminateUser()">
+                        CONFIRM TERMINATION
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== TOAST ========== -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="sentinelToast" class="toast bg-dark text-white border-secondary" role="alert" aria-live="assertive"
+            aria-atomic="true">
+            <div class="toast-body d-flex align-items-center">
+                <i class="fas fa-check-circle text-success me-3"></i>
+                <div id="toastMsg" class="small">System operational</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+
+</html>

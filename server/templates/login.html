@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel | Operator Access</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-black: #000000;
+            --card-bg: #0a0a0a;
+            --border-color: #222222;
+            --text-main: #ffffff;
+            --text-dim: #999999;
+            --accent-white: #ffffff;
+            --error-red: #ff3333;
+            --input-bg: #111111;
+            --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body,
+        html {
+            width: 100%;
+            /* min-height ensures centering even if content grows */
+            min-height: 100vh;
+            background-color: var(--bg-black);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .main-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 1.2s var(--ease-out-expo) forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .portal-title {
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.05em;
+        }
+
+        .portal-subtitle {
+            color: var(--text-dim);
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            max-width: 500px;
+            line-height: 1.5;
+            margin: 0 auto;
+        }
+
+        /* Perfectly Sized Login Card */
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 440px;
+            /* Standardized pro-width matching admin */
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-container {
+            text-align: left;
+            margin-bottom: 1.25rem;
+        }
+
+        .field-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #fff;
+            /* Improved contrast */
+            letter-spacing: 0.1rem;
+            margin-bottom: 0.6rem;
+            display: block;
+            font-weight: 700;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1.25rem;
+            color: #444;
+            font-size: 1.1rem;
+            transition: color 0.3s;
+        }
+
+        .input-field {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.1rem 1.1rem 1.1rem 3.5rem;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s var(--ease-out-expo);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #666;
+            background: #161616;
+        }
+
+        .input-field:focus+.input-icon {
+            color: var(--accent-white);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 1.2rem;
+            background: var(--accent-white);
+            color: black;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.05rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.8rem;
+            margin-top: 1rem;
+            transition: all 0.3s var(--ease-out-expo);
+        }
+
+        .btn-submit:hover {
+            background: #d4d4d4;
+            transform: translateY(-2px);
+        }
+
+        .separator {
+            margin: 2.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .separator-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            padding: 0 1rem;
+            color: #444;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.2rem;
+            white-space: nowrap;
+        }
+
+        .btn-admin {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-dim);
+            padding: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05rem;
+            transition: all 0.3s;
+        }
+
+        .btn-admin:hover {
+            color: white;
+            border-color: #444;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Notifications */
+        .toast-vault {
+            position: fixed;
+            bottom: 2rem;
+            /* Better placement for mobile */
+            right: 2rem;
+            background: #0d0d0d;
+            border: 1px solid var(--error-red);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+        }
+
+        @media (max-width: 480px) {
+            .toast-vault {
+                left: 1rem;
+                right: 1rem;
+                bottom: 1rem;
+            }
+
+            .login-card {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body data-flashes='{{ get_flashed_messages(with_categories=true) | tojson }}'>
+
+    <div class="main-wrapper">
+        <header>
+            <h1 class="portal-title">SENTINEL</h1>
+            <p class="portal-subtitle">Secure Command Center. Enter credentials to establish a
+                session.</p>
+        </header>
+
+        <div class="login-card">
+            <form id="loginForm" method="POST" action="{{ action_url|default(url_for('login_page')) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="input-container">
+                    <label for="username" class="field-label">User Identity</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="username" name="username" class="input-field" placeholder="Username"
+                            required autofocus>
+                        <i class="fas fa-user-shield input-icon" aria-hidden="true"></i>
+                    </div>
+                </div>
+
+                <div class="input-container">
+                    <label for="password" class="field-label">Access Key</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" name="password" class="input-field" placeholder="••••••••"
+                            required>
+                        <i class="fas fa-fingerprint input-icon" aria-hidden="true"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    VERIFY & CONNECT <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </form>
+
+            <div class="separator">
+                <span class="separator-text">AUTHORIZED ONLY</span>
+            </div>
+
+            <button type="button" onclick="window.location.href='/admin';" class="btn-admin">
+                ADMINISTRATOR PORTAL
+            </button>
+        </div>
+    </div>
+
+    <div id="loginToast" class="toast-vault">
+        <div class="toast-icon" id="toastIcon"><i class="fas fa-shield-exclamation" aria-hidden="true"></i></div>
+        <div>
+            <div id="toastTitle" class="toast-title" style="font-weight: 800; font-size: 0.8rem;">INITIATING...</div>
+            <div id="toastMsg" class="toast-msg" style="color: var(--text-dim); font-size: 0.75rem;">Waiting for
+                authentication.</div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+
+</html>
