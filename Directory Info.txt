@@ -1,0 +1,107 @@
+📁 Root Directory
+
+README.md
+: The primary guide for the project. It contains the high-level architecture overview, setup instructions, and details about the Sentinel FTMS (Secure File Transfer Monitoring System) capabilities.
+
+SENTINEL_DOCUMENTATION.md
+: Detailed specific documentation explaining the mechanisms, logic, and operational protocols of the Sentinel project.
+
+run.py
+: The main execution/startup script. Running this file starts the application and its background monitoring threads simultaneously.
+
+requirements.txt
+: A conventional Python file that lists all external libraries (like Flask, Waitress, Watchdog, etc.) required to run the project.
+
+.gitignore
+: Defines which files and folders Git should ignore and not track (e.g., specific generated log files, /venv folders, __pycache__).
+📁 config/
+Stores global configuration parameters and constants.
+
+
+config.py
+: The central brain of project configuration. It dynamically sets up system paths (based on whether you are running Windows or Linux), configures sensitivity rules, ransomware thresholds, logging directories, and network binding details (IPs/Ports).
+📁 core/
+The main security and processing backbone of the Sentinel system.
+
+
+monitor.py
+: A watchdog daemon running constantly in the background. It watches the storage/ directory for any file creation, modification, deletion, or rename events.
+
+threat_engine.py
+: Conducts live heuristic analysis. It analyzes actions picked up by 
+
+monitor.py
+ to identify indicators of compromise (like potential ransomware encrypting files or suspicious executables).
+
+severity_engine.py
+: Assesses and scores threats. It assigns a risk level (CRITICAL, HIGH, MEDIUM, LOW) based on what the threat_engine finds.
+
+crypto_utils.py
+: Manages encryption and decryption processes (e.g., verifying user passwords or handling secure data in transit or at rest).
+
+generate_report.py
+: Contains the logic used to compile the security incidents and file logs into human-readable or automated reports.
+
+logger.py
+: Manages the formatting and outputting of telemetry and audit trails into the logs/ directory.
+📁 server/
+Contains the Flask backend that powers the web interface.
+
+
+app.py
+: The main Flask server file. It handles all HTTP routing, web API endpoints, and orchestrates requests between the frontend and the core modules.
+
+database_manager.py
+: Acts as the interface connecting the application and the local SQLite database. It performs queries to retrieve logs, manage user access, and update user roles (RBAC).
+database/: A folder storing the main SQLite database (
+
+monitoring.db
+) which persists user credentials, configurations, and all access/threat logs.
+static/: Holds frontend assets that are served directly to the user's browser, such as CSS (stylesheets), custom JavaScript (frontend validations, dynamic graphs), and images.
+templates/: Contains the HTML files (using Jinja templating) that Flask renders and serves to users, like the Admin Dashboard UI and the User Login screen.
+📁 scripts/
+Contains helper/utility run-once scripts used by administrators for maintenance logic.
+
+
+reset_passwords.py
+: A script specifically designed to safely reset or hash administrator and user passwords inside the database via terminal constraints.
+
+check_dashboard_counts.py
+: A diagnostic script likely used to query and verify the integrity and counts of specific telemetry data (like threat occurrences) without having to launch the entire server.
+📁 storage/
+This is the primary monitored target directory where file uploads and transfers are managed and actively analyzed by 
+
+monitor.py
+.
+
+admin/ & admin/sensitive/: Special sub-directories explicitly marked by 
+
+config.py
+ as having higher security strictness for stored files.
+.quarantine/: An isolated holding zone. If the threat_engine detects a highly suspicious file (like potential malware or a forbidden .exe), it gets moved here where it cannot be executed or transferred safely.
+📁 utils/
+Features generic helper modules used across the project structure.
+
+
+network_detector.py
+: Automatically scans the host machine's network interfaces. It's used by 
+
+config.py
+ to figure out the local IP Addresses (IPv4 and IPv6) appropriately so the server knows exactly what address to bind to upon booting up.
+📁 docs/
+Holds developmental and architectural planning materials.
+
+
+architecture.md
+: Outlines the deeper structural design decisions, data flow, and module responsibilities.
+
+requirements.md
+: Contains the functional and non-functional requirements that defined the scope of the original system build.
+📁 logs/
+A system-generated folder where runtime telemetry texts, JSON audit trails, error tracebacks, and operational logs are stored as text files for SysAdmins to review later.
+
+📁 mnt/
+Used for simulating or mapping external drives (like USB tests mapped from 
+
+config.py
+) to provide cross-platform functionality testing when tracking fil
