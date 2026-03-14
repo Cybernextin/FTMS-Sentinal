@@ -59,10 +59,16 @@ python run.py
 
 ##ADMINISTRATOR PASSWORD
 
+```bash
 --USER: admin
 --PASSWORD: password123
+```
 
 Then u can chnage the admin password 
+
+```bash
+If you are going to delete the entire log purge there a permission password required which is your admin password
+```
 
 ## Contributing
 Follow standard branching rules and please maintain Python type hinting within core engine modules to preserve maintainability.
